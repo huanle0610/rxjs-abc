@@ -10,8 +10,8 @@ const source = range$.pipe(
     range$,
     range$.pipe(skip(1)),
     range$.pipe(skip(2)),
-    function (s1, s2, s3) {
-      console.warn(arguments);
+    (s1, s2, s3, ...args) => {
+      console.warn(s1, s2, s3, ...args);
       return `${s1}:${s2}:${s3}`;
     },
   ),

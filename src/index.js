@@ -7,7 +7,6 @@ import {
 import fetch from 'node-fetch';
 
 
-
 import readLine from './readline';
 import getFileContent from './file';
 import demoPow from './pow';

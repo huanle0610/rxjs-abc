@@ -27,7 +27,7 @@ reader$
   }))
   .subscribe((line) => {
     buffer$.next(`${line}\n`); // 読み込んだ1行をバッファーに追加する。
-    counter++;
+    counter += 1;
     if (counter % 10 === 0) {
       flusher$.next(); // バッファーを流す。
     }

@@ -7,7 +7,7 @@ export default function fromStream(stream, finishEventName = 'end', dataEventNam
 
   return Observable.create((observer) => {
     function dataHandler(data) {
-      console.log(data)
+      console.log(data);
       observer.next(data);
     }
 
@@ -35,5 +35,5 @@ export default function fromStream(stream, finishEventName = 'end', dataEventNam
 
 
 export function fromReadLineStream(stream) {
-  return fromStream(stream, 'close', 'line')
+  return fromStream(stream, 'close', 'line');
 }
