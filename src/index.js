@@ -2,7 +2,7 @@ import {
   Observable, Subject, ReplaySubject, from, of, range, bindNodeCallback,
 } from 'rxjs';
 import {
-  map, filter, switchMap, tap, skip, zip, finalize, buffer,
+  map, filter, merge, switchMap, flatMap, tap, skip, zip, finalize, buffer, catchError,
 } from 'rxjs/operators';
 import fetch from 'node-fetch';
 import fs from 'fs';
@@ -35,9 +35,31 @@ console.log('more...');
 
 // demoAsync();
 
-from(fetch('https://jsonplaceholder.typicode.com/posts/1').then(r => r.json()))
-  .pipe(map(v => `amtf - ${v.userId}`))
-  .subscribe(console.log);
+// Print results.
+function printResultFor(op) {
+  return function printResult(err, res) {
+    if (err) console.log(`${op} error: ${err.toString()}`);
+    if (res) console.log(`${op} status: ${res.constructor.name}`);
+  };
+}
+
+const catchErrorAndLog = op => catchError((val) => {
+  console.error(`[${op}] I caught: ${val}`);
+  // return of(`[${op}] I caught: ${val}`);
+  return of(val);
+});
+
+const searchDirs$ = of(['/etc/skel/', '/home/amtf']);
+searchDirs$
+  // .pipe(map(v => console.log(v, 123)))
+  .pipe(tap(v => console.log(v, 123)))
+  .pipe(tap(v => console.log(v, 123)))
+  .subscribe(printResultFor('searchDirs$'));
+
+const request$ = from(fetch('https://jsonplaceholder.typicode.com/posts/1').then(r => r.json()))
+  .pipe(catchError(val => of(`I caught: ${val}`)))
+  .pipe(map(v => `amtf - ${v.userId}`));
+  // .subscribe(console.log);
 
 const readdir$ = bindNodeCallback(fs.readdir);
 const source$ = readdir$('./src');
@@ -48,16 +70,20 @@ const source$ = readdir$('./src');
 // );
 
 const readfile$ = bindNodeCallback(fs.readFile);
-const readSource$ = readfile$('/etc/hostsa', 'utf-8');
+const readSource$ = readfile$('/etc/hosts1', 'utf-8')
+  .pipe(catchErrorAndLog('readSource$'));
 // .subscribe(
 //   res => console.log(`file content ${res}`),
-// )
+// );
 
 readSource$.pipe(
   zip(
     source$,
-    (hosts, files) => {
-      console.log(hosts, files, 'haha');
+    request$,
+    (hosts, files, user) => {
+      console.log(typeof hosts);
+      console.log(hosts, files, user, 'haha');
+      return true;
     },
   ),
 ).subscribe(
