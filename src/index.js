@@ -2,7 +2,7 @@ import {
   Observable, Subject, ReplaySubject, from, of, range, bindNodeCallback,
 } from 'rxjs';
 import {
-  map, filter, merge, switchMap, flatMap, tap, skip, zip, finalize, buffer, catchError,
+  map, filter, merge, switchMap, flatMap, repeat, retryWhen, mergeMap, tap, skip, zip, finalize, buffer, catchError,
 } from 'rxjs/operators';
 import fetch from 'node-fetch';
 import fs from 'fs';
@@ -97,3 +97,38 @@ readSource$.pipe(
     console.log('Completed');
   },
 );
+
+// https://www.learnrxjs.io/operators/error_handling/retrywhen.html
+// 0 unknown 1 OK 2 need try 3 error
+const dns = require('dns');
+
+const res = 0;
+
+const lookup$ = bindNodeCallback(dns.lookup);
+
+const lookupA$ = lookup$('iana.org')
+  .pipe(catchError(e => of(!e)))
+  .pipe(map(v => v.length === 2));
+const lookupB$ = lookup$('iana.aorg')
+  .pipe(catchError(e => of(!e)));
+lookupA$
+  .pipe(
+    mergeMap(
+      () => lookupB$,
+      (a, b) => of(`${a ? 1 : 0}${b ? 1 : 0}`),
+    ),
+  )
+  .pipe(tap(a => console.error(a)))
+  .pipe(retryWhen(v => ['00', '01', '10'].includes(v)))
+  .subscribe(
+    (x) => {
+      console.log(`Next: ${x}`);
+    },
+    (err) => {
+      console.error(`Error: ${err}`);
+      console.error(err);
+    },
+    () => {
+      console.log('Completed');
+    },
+  );
